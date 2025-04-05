@@ -1,9 +1,10 @@
 -- パターン2：異なる家族で同じ番号（NG）
-
 INSERT INTO family (id) VALUES ('00000000-0000-0000-0000-000000000002');
 
-INSERT INTO customer (id, name, phone_number) VALUES
-  ('00000000-0000-0000-0000-000000000013', 'Charlie', '000-0000-0000');
+INSERT INTO customer (id, name) VALUES ('00000000-0000-0000-0000-000000000013', 'Charlie');
 
 INSERT INTO family_member (family_id, customer_id) VALUES
   ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000013');
+
+INSERT INTO customer_phone (customer_id, phone_number) VALUES
+  ('00000000-0000-0000-0000-000000000013', '000-0000-0000');

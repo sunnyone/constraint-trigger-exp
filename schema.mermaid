@@ -1,19 +1,24 @@
 erDiagram
 
-    customer {
-        uuid id PK
-        text name
-        text phone_number
-    }
+customer {
+    uuid id PK
+    text name
+}
 
-    family {
-        uuid id PK
-    }
+customer_phone {
+    uuid customer_id PK, FK
+    text phone_number
+}
 
-    family_member {
-        uuid family_id PK, FK
-        uuid customer_id PK, FK
-    }
+family {
+    uuid id PK
+}
 
-    customer ||--o{ family_member : "has many"
-    family   ||--o{ family_member : "has many"
+family_member {
+    uuid family_id PK, FK
+    uuid customer_id PK, FK
+}
+
+customer ||--o{ customer_phone : ""
+customer ||--o{ family_member : ""
+family ||--o{ family_member : ""

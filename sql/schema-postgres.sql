@@ -1,16 +1,21 @@
 -- 初期化
 DROP TABLE IF EXISTS family_member CASCADE;
 DROP TABLE IF EXISTS family CASCADE;
+DROP TABLE IF EXISTS customer_phone CASCADE;
 DROP TABLE IF EXISTS customer CASCADE;
 
 -- テーブル追加
 CREATE TABLE customer (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL
+);
+
+CREATE TABLE customer_phone (
+    customer_id UUID PRIMARY KEY REFERENCES customer(id),
     phone_number TEXT
 );
 
-CREATE INDEX customer_phone_number_index ON customer (phone_number);
+CREATE INDEX customer_phone_phone_number_index ON customer_phone (phone_number);
 
 CREATE TABLE family (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY
@@ -30,10 +35,11 @@ CREATE OR REPLACE VIEW customer_phone_number_conflicts AS
 WITH base AS (
   SELECT
     c.id AS customer_id,
-    c.phone_number,
-    f.family_id
+    cp.phone_number,
+    fm.family_id
   FROM customer c
-  LEFT JOIN family_member f ON c.id = f.customer_id
+  LEFT JOIN customer_phone cp ON c.id = cp.customer_id
+  LEFT JOIN family_member fm ON c.id = fm.customer_id
 ),
 pairs AS (
   SELECT
@@ -44,10 +50,8 @@ pairs AS (
     t1.family_id AS t1_family_id,
     t2.family_id AS t2_family_id
   FROM base t1
-  JOIN base t2
-    ON t1.customer_id <> t2.customer_id
+  JOIN base t2 ON t1.customer_id <> t2.customer_id
 )
-
 SELECT *
 FROM pairs
 WHERE t1_phone_number IS NOT NULL
@@ -64,9 +68,9 @@ RETURNS TRIGGER AS $$
 BEGIN
   IF EXISTS (
     SELECT 1 FROM customer_phone_number_conflicts
-    WHERE t1_customer_id = NEW.id
+    WHERE t1_customer_id = NEW.customer_id
   ) THEN
-    RAISE EXCEPTION 'Phone number conflict: cannot update customer';
+    RAISE EXCEPTION 'Phone number conflict: cannot update customer phone';
   END IF;
   RETURN NEW;
 END;
@@ -96,7 +100,7 @@ $$ LANGUAGE plpgsql;
 
 -- trigger
 CREATE CONSTRAINT TRIGGER check_customer_phone_number_conflict_trigger
-AFTER INSERT OR UPDATE OF phone_number ON customer
+AFTER INSERT OR UPDATE OF phone_number ON customer_phone
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW
 EXECUTE FUNCTION check_customer_phone_number_conflict_on_update();
